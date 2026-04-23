@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Café Money Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#faf9f6;
+  --sidebar:#1c1612;
+  --accent:#c85d1a;
+  --accent2:#e07a40;
+  --text:#1c1612;
+  --text2:#7a7068;
+  --border:#e5dfd6;
+  --white:#ffffff;
+  --surface:#f2ede6;
+  --green:#2a7a48;
+  --red:#b53a2d;
+  --shadow:0 1px 4px rgba(28,22,18,0.08);
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;line-height:1.5}
+
+/* ---- SIDEBAR ---- */
+.sidebar{width:220px;background:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-brand{padding:20px 18px 14px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.cafe-name-wrap{cursor:pointer;display:flex;align-items:center;gap:6px}
+.cafe-name-text{color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cafe-name-edit-btn{font-size:10px;color:rgba(255,255,255,0.35);flex-shrink:0}
+.cafe-name-input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.3);color:#fff;font-size:14px;font-family:inherit;font-weight:600;width:100%;outline:none;padding:2px 0}
+.sidebar-subtitle{color:rgba(255,255,255,0.3);font-size:11px;margin-top:4px;letter-spacing:0.03em}
+.sidebar-nav{flex:1;padding:10px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;color:rgba(255,255,255,0.55);font-size:13.5px;cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.05)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,0.07);border-left-color:var(--accent2)}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.15);flex-shrink:0}
+.nav-item.active .nav-dot{background:var(--accent2)}
+.sidebar-ver{padding:14px 18px;color:rgba(255,255,255,0.2);font-size:11px;border-top:1px solid rgba(255,255,255,0.06)}
+
+/* ---- MAIN LAYOUT ---- */
+.main{flex:1;overflow:hidden}
+.content{max-width:880px;margin:0 auto;padding:28px 24px}
+
+/* ---- TYPOGRAPHY ---- */
+.page-title{font-size:19px;font-weight:600;color:var(--text);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text2);margin-bottom:10px}
+
+/* ---- STAT CARDS ---- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+.stat-value{font-size:20px;font-weight:600;line-height:1}
+.stat-value.pos{color:var(--green)}
+.stat-value.neg{color:var(--red)}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* ---- FORM CARD ---- */
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;color:var(--text2);font-weight:500}
+.form-group input,
+.form-group select{
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:8px 10px;
+  font-size:13.5px;
+  font-family:inherit;
+  color:var(--text);
+  background:var(--bg);
+  outline:none;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  width:100%;
+}
+.form-group input:focus,
+.form-group select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,93,26,0.1)}
+.form-group.full{grid-column:1/-1}
+.live-calc{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text2);margin-top:8px;min-height:20px}
+.live-calc strong{color:var(--text)}
+.form-actions{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.sync-msg{font-size:12px;color:var(--text2)}
+.sync-msg.ok{color:var(--green)}
+.sync-msg.err{color:var(--red)}
+
+/* ---- BUTTONS ---- */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:13.5px;font-family:inherit;font-weight:500;cursor:pointer;transition:all 0.15s;user-select:none;text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff;border:1px solid var(--accent)}
+.btn-primary:hover{background:#b05018;border-color:#b05018}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--text2);color:var(--text)}
+.btn-sm{padding:5px 11px;font-size:12.5px;border-radius:6px}
+.btn-del{background:transparent;color:var(--text2);border:none;padding:3px 7px;font-size:12px;border-radius:5px;cursor:pointer;opacity:0.6;transition:all 0.15s}
+.btn-del:hover{background:rgba(181,58,45,0.1);color:var(--red);opacity:1}
+
+/* ---- TABLE ---- */
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow)}
+.table-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg)}
+.table-title{font-size:13px;font-weight:600}
+.table-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.month-sel{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.month-sel select{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;background:var(--bg);color:var(--text);outline:none}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+th{padding:9px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface)}
+td{padding:9px 12px;border-bottom:1px solid var(--surface);white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fdf9f4}
+td.bold{font-weight:600}
+td.muted{color:var(--text2);font-size:12.5px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:500;background:var(--surface);color:var(--text2);white-space:nowrap}
+.empty{text-align:center;padding:28px 16px;color:var(--text2);font-size:13px}
+
+/* ---- P&L ---- */
+.pl-wrap{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow)}
+.pl-row{display:flex;justify-content:space-between;align-items:center;padding:11px 20px;border-bottom:1px solid var(--surface);font-size:13.5px}
+.pl-row:last-child{border-bottom:none}
+.pl-row.head-row{background:var(--surface);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text2);padding:9px 20px}
+.pl-row.section-head{background:var(--surface);font-weight:600}
+.pl-row.sub{padding-left:38px;color:var(--text2);font-size:13px}
+.pl-row.divider{border-top:2px solid var(--border)}
+.pl-row.total-row{font-weight:600;border-top:2px solid var(--border);background:var(--surface)}
+.pl-row.net{font-weight:700;font-size:15px;border-top:2px solid var(--border)}
+.pl-row.after{font-weight:600;border-top:1px solid var(--border)}
+
+/* ---- SETTINGS ---- */
+.settings-block{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.settings-block h3{font-size:14px;font-weight:600;margin-bottom:14px}
+.settings-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.settings-row label{font-size:12px;color:var(--text2);font-weight:500}
+.settings-row input,.settings-row textarea{border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;width:100%;transition:border-color 0.15s}
+.settings-row input:focus,.settings-row textarea:focus{border-color:var(--accent)}
+.info-box{background:var(--surface);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.65;border-left:3px solid var(--border)}
+.info-box strong{color:var(--text);font-weight:500}
+.code-steps{background:#1c1612;color:#d4c8be;border-radius:8px;padding:14px;font-size:12.5px;font-family:'Courier New',monospace;overflow-x:auto;white-space:pre-wrap;margin-top:10px;line-height:1.7}
+.row-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ---- TOAST ---- */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:9999;max-width:280px}
+.toast.show{opacity:1}
+
+/* ---- MOBILE ---- */
+@media(max-width:700px){
+  body{flex-direction:column}
+  .sidebar{width:100%;min-height:auto;height:auto;flex-direction:row;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+  .sidebar-brand{padding:12px 14px;flex:1;border-bottom:none;border-right:1px solid rgba(255,255,255,0.08)}
+  .sidebar-nav{display:flex;flex-direction:row;padding:6px;flex:2;overflow-x:auto}
+  .nav-item{padding:8px 12px;flex-direction:column;gap:3px;font-size:11px;border-left:none;border-bottom:3px solid transparent}
+  .nav-item.active{border-left:none;border-bottom-color:var(--accent2)}
+  .nav-dot{display:none}
+  .sidebar-ver{display:none}
+  .content{padding:16px 14px}
+  .form-grid{grid-template-columns:1fr 1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="cafe-name-wrap" onclick="startEditName()" id="nameWrap">
+      <span class="cafe-name-text" id="cafeNameDisplay">My Café</span>
+      <span class="cafe-name-edit-btn">✎</span>
+    </div>
+    <div class="sidebar-subtitle">Money Tracker</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showTab('sales')" id="nav-sales"><div class="nav-dot"></div>Daily Sales</div>
+    <div class="nav-item" onclick="showTab('expenses')" id="nav-expenses"><div class="nav-dot"></div>Expenses</div>
+    <div class="nav-item" onclick="showTab('inventory')" id="nav-inventory"><div class="nav-dot"></div>Inventory</div>
+    <div class="nav-item" onclick="showTab('drawer')" id="nav-drawer"><div class="nav-dot"></div>Cash Drawer</div>
+    <div class="nav-item" onclick="showTab('pl')" id="nav-pl"><div class="nav-dot"></div>P&amp;L Report</div>
+    <div class="nav-item" onclick="showTab('settings')" id="nav-settings"><div class="nav-dot"></div>Settings</div>
+  </nav>
+  <div class="sidebar-ver">v1.0 · Local Storage</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="content" id="mainContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+// STORAGE
+// ================================================================
+// In-memory fallback if localStorage is blocked (iOS file:// protocol)
+const _mem = {};
+let _lsAvail = false;
+try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); _lsAvail = true; } catch(e) {}
+
+const store = {
+  get: k => {
+    if (_lsAvail) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) {} }
+    return (k in _mem) ? _mem[k] : null;
+  },
+  set: (k, v) => {
+    if (_lsAvail) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+    _mem[k] = v;
+  },
+  remove: k => {
+    if (_lsAvail) { try { localStorage.removeItem(k); } catch(e) {} }
+    delete _mem[k];
+  },
+  arr: k => store.get(k) || []
+};
+
+// ================================================================
+// STATE
+// ================================================================
+let activeTab = 'sales';
+let state = {
+  salesMonth:   todayMonth(),
+  expMonth:     todayMonth(),
+  invMonth:     todayMonth(),
+  drawerMonth:  todayMonth(),
+  plMonth:      todayMonth()
+};
+
+// ================================================================
+// HELPERS
+// ================================================================
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function todayMonth() { return new Date().toISOString().slice(0,7); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function fmtRs(n) {
+  const num = Math.round(Number(n) || 0);
+  return '₹' + num.toLocaleString('en-IN');
+}
+
+function fmtMonth(ym) {
+  if (!ym) return '';
+  const [y, m] = ym.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1] + ' ' + y;
+}
+
+function allMonths() {
+  const months = new Set([todayMonth()]);
+  [...store.arr('sales'), ...store.arr('expenses'), ...store.arr('inventory')]
+    .forEach(e => { if (e.date) months.add(e.date.slice(0,7)); });
+  return [...months].sort().reverse();
+}
+
+function monthOpts(sel) {
+  return allMonths().map(m => `<option value="${m}"${m===sel?' selected':''}>${fmtMonth(m)}</option>`).join('');
+}
+
+function byMonth(arr, m) { return arr.filter(e => e.date && e.date.startsWith(m)); }
+
+function expSum(arr, cat) { return arr.filter(e => e.category === cat).reduce((s,e) => s + (Number(e.amount)||0), 0); }
+
+function toast(msg, dur=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+function getCafeName() { return store.get('cafe_name') || 'My Café'; }
+
+// ================================================================
+// NAME EDIT
+// ================================================================
+function startEditName() {
+  const w = document.getElementById('nameWrap');
+  w.innerHTML = `<input class="cafe-name-input" type="text" value="${getCafeName()}"
+    onblur="commitName(this)" onkeydown="if(event.key==='Enter')this.blur()" maxlength="40">`;
+  w.querySelector('input').focus();
+  w.querySelector('input').select();
+}
+
+function commitName(inp) {
+  const name = (inp.value.trim() || 'My Café').slice(0,40);
+  store.set('cafe_name', name);
+  document.title = name + ' — Tracker';
+  const w = document.getElementById('nameWrap');
+  w.innerHTML = `<span class="cafe-name-text" id="cafeNameDisplay">${name}</span><span class="cafe-name-edit-btn">✎</span>`;
+  w.onclick = startEditName;
+}
+
+// ================================================================
+// NAVIGATION
+// ================================================================
+function showTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + tab);
+  if (navEl) navEl.classList.add('active');
+  render();
+}
+
+function render() {
+  try {
+    document.getElementById('mainContent').innerHTML = buildTab(activeTab);
+  } catch(err) {
+    document.getElementById('mainContent').innerHTML = `
+      <div style="padding:24px;background:#fff3f2;border:1px solid #f5c6c3;border-radius:10px;margin:20px;font-size:13px;color:#7a1a14;line-height:1.8">
+        <strong>Something went wrong loading this tab.</strong><br>
+        Error: ${err.message}<br><br>
+        If you're opening this file directly on iPhone, please host it on GitHub Pages instead
+        (see the HOSTING_INSTRUCTIONS.txt file that came with this app). That fixes this permanently.
+      </div>`;
+  }
+}
+
+function buildTab(tab) {
+  if (tab === 'sales')    return buildSales();
+  if (tab === 'expenses') return buildExpenses();
+  if (tab === 'inventory')return buildInventory();
+  if (tab === 'drawer')   return buildDrawer();
+  if (tab === 'pl')       return buildPL();
+  if (tab === 'settings') return buildSettings();
+  return '';
+}
+
+// ================================================================
+// TAB: DAILY SALES
+// ================================================================
+function buildSales() {
+  const all = store.arr('sales');
+  const filtered = byMonth(all, state.salesMonth);
+  const totalSales = filtered.reduce((s,e) => s + (Number(e.cash)||0) + (Number(e.upi)||0), 0);
+  const totalCash  = filtered.reduce((s,e) => s + (Number(e.cash)||0), 0);
+  const totalUPI   = filtered.reduce((s,e) => s + (Number(e.upi)||0), 0);
+  const avgDaily   = filtered.length ? Math.round(totalSales / filtered.length) : 0;
+  const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+  return `
+<div class="page-title">Daily Sales Log</div>
+
+<div class="form-card">
+  <div class="section-label">Add New Entry</div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="s_date" value="${todayISO()}">
+    </div>
+    <div class="form-group">
+      <label>Cash Sales (₹)</label>
+      <input type="number" id="s_cash" placeholder="0" min="0" oninput="calcSalesLive()">
+    </div>
+    <div class="form-group">
+      <label>UPI / Online Sales (₹)</label>
+      <input type="number" id="s_upi" placeholder="0" min="0" oninput="calcSalesLive()">
+    </div>
+    <div class="form-group">
+      <label>Customer Count</label>
+      <input type="number" id="s_cust" placeholder="0" min="0" oninput="calcSalesLive()">
+    </div>
+    <div class="form-group full">
+      <label>Notes (optional)</label>
+      <input type="text" id="s_notes" placeholder="Holiday, event, slow day, staff absent...">
+    </div>
+  </div>
+  <div class="live-calc" id="s_calc"></div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="addSale()">Add Entry</button>
+    <span class="sync-msg" id="s_sync"></span>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Sales</div>
+    <div class="stat-value">${fmtRs(totalSales)}</div>
+    <div class="stat-sub">${filtered.length} days recorded</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Cash</div>
+    <div class="stat-value">${fmtRs(totalCash)}</div>
+    <div class="stat-sub">${totalSales > 0 ? Math.round(totalCash/totalSales*100) : 0}% of total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">UPI / Online</div>
+    <div class="stat-value">${fmtRs(totalUPI)}</div>
+    <div class="stat-sub">${totalSales > 0 ? Math.round(totalUPI/totalSales*100) : 0}% of total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Daily Sales</div>
+    <div class="stat-value">${fmtRs(avgDaily)}</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <div class="table-title">Entries — ${fmtMonth(state.salesMonth)}</div>
+    <div class="table-controls">
+      <div class="month-sel">
+        Month: <select onchange="state.salesMonth=this.value;render()">${monthOpts(state.salesMonth)}</select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV('sales')">Export CSV</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Cash</th><th>UPI/Online</th><th>Total</th><th>Customers</th><th>Avg Order</th><th>Notes</th><th></th>
+      </tr></thead>
+      <tbody>
+      ${sorted.length === 0
+        ? `<tr><td colspan="8" class="empty">No entries for ${fmtMonth(state.salesMonth)} — add one above</td></tr>`
+        : sorted.map(e => {
+            const tot = (Number(e.cash)||0) + (Number(e.upi)||0);
+            const aov = e.customers > 0 ? Math.round(tot / e.customers) : null;
+            return `<tr>
+              <td>${e.date}</td>
+              <td>${fmtRs(e.cash)}</td>
+              <td>${fmtRs(e.upi)}</td>
+              <td class="bold">${fmtRs(tot)}</td>
+              <td>${e.customers || '—'}</td>
+              <td>${aov ? fmtRs(aov) : '—'}</td>
+              <td class="muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${e.notes || ''}</td>
+              <td><button class="btn-del" onclick="del('sales','${e.id}')">✕</button></td>
+            </tr>`;
+          }).join('')
+      }
+      </tbody>
+    </table>
+  </div>
+</div>`;
+}
+
+function calcSalesLive() {
+  const cash = Number(document.getElementById('s_cash')?.value || 0);
+  const upi  = Number(document.getElementById('s_upi')?.value || 0);
+  const cust = Number(document.getElementById('s_cust')?.value || 0);
+  const tot  = cash + upi;
+  const el   = document.getElementById('s_calc');
+  if (!el) return;
+  if (tot <= 0) { el.innerHTML = ''; return; }
+  const aov = cust > 0 ? ` &nbsp;·&nbsp; Avg Order: <strong>${fmtRs(Math.round(tot/cust))}</strong>` : '';
+  el.innerHTML = `Total: <strong>${fmtRs(tot)}</strong>${aov}`;
+}
+
+function addSale() {
+  const date      = document.getElementById('s_date').value;
+  const cash      = parseFloat(document.getElementById('s_cash').value) || 0;
+  const upi       = parseFloat(document.getElementById('s_upi').value) || 0;
+  const customers = parseInt(document.getElementById('s_cust').value) || 0;
+  const notes     = document.getElementById('s_notes').value.trim();
+  if (!date) { toast('Please enter a date'); return; }
+  if (cash + upi === 0) { toast('Please enter at least one sales amount'); return; }
+  const entry = { id: genId(), date, cash, upi, customers, notes };
+  const arr = store.arr('sales');
+  arr.push(entry);
+  store.set('sales', arr);
+  state.salesMonth = date.slice(0,7);
+  syncEntry('sales', entry, 's_sync');
+  render();
+  toast('Sales entry saved');
+}
+
+// ================================================================
+// TAB: EXPENSES
+// ================================================================
+const EXP_CATS  = ['Raw Material','Salary','Rent','Electricity','Generator','Packaging','Maintenance','Petpooja','Transport','Personal Withdrawal','Other'];
+const PAID_OPTS = ['Cash','Bank Transfer','UPI'];
+
+function buildExpenses() {
+  const all      = store.arr('expenses');
+  const filtered = byMonth(all, state.expMonth);
+  const totalExp = filtered.reduce((s,e) => s + (Number(e.amount)||0), 0);
+  const byCategory = {};
+  EXP_CATS.forEach(c => { byCategory[c] = expSum(filtered, c); });
+  const topCats = EXP_CATS.filter(c => byCategory[c] > 0).sort((a,b) => byCategory[b]-byCategory[a]);
+  const sorted  = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+  const statCards = [
+    `<div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value neg">${fmtRs(totalExp)}</div><div class="stat-sub">${filtered.length} entries</div></div>`,
+    ...topCats.slice(0,3).map(c => `<div class="stat-card"><div class="stat-label">${c}</div><div class="stat-value">${fmtRs(byCategory[c])}</div></div>`)
+  ].join('');
+
+  return `
+<div class="page-title">Expense Log</div>
+
+<div class="form-card">
+  <div class="section-label">Add New Expense</div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="e_date" value="${todayISO()}">
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="e_cat">
+        ${EXP_CATS.map(c => `<option value="${c}">${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <input type="text" id="e_desc" placeholder="What exactly was bought or paid">
+    </div>
+    <div class="form-group">
+      <label>Amount (₹)</label>
+      <input type="number" id="e_amt" placeholder="0" min="0">
+    </div>
+    <div class="form-group">
+      <label>Paid Via</label>
+      <select id="e_via">
+        ${PAID_OPTS.map(p => `<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes (vendor, receipt no.)</label>
+      <input type="text" id="e_notes" placeholder="Optional">
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+    <span class="sync-msg" id="e_sync"></span>
+  </div>
+</div>
+
+<div class="stat-grid">${statCards}</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <div class="table-title">Entries — ${fmtMonth(state.expMonth)}</div>
+    <div class="table-controls">
+      <div class="month-sel">
+        Month: <select onchange="state.expMonth=this.value;render()">${monthOpts(state.expMonth)}</select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV('expenses')">Export CSV</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Paid Via</th><th>Notes</th><th></th>
+      </tr></thead>
+      <tbody>
+      ${sorted.length === 0
+        ? `<tr><td colspan="7" class="empty">No expenses for ${fmtMonth(state.expMonth)}</td></tr>`
+        : sorted.map(e => `<tr>
+            <td>${e.date}</td>
+            <td><span class="badge">${e.category}</span></td>
+            <td>${e.description}</td>
+            <td class="bold">${fmtRs(e.amount)}</td>
+            <td class="muted">${e.paidVia}</td>
+            <td class="muted">${e.notes || ''}</td>
+            <td><button class="btn-del" onclick="del('expenses','${e.id}')">✕</button></td>
+          </tr>`).join('')
+      }
+      </tbody>
+    </table>
+  </div>
+</div>`;
+}
+
+function addExpense() {
+  const date    = document.getElementById('e_date').value;
+  const cat     = document.getElementById('e_cat').value;
+  const desc    = document.getElementById('e_desc').value.trim();
+  const amount  = parseFloat(document.getElementById('e_amt').value) || 0;
+  const paidVia = document.getElementById('e_via').value;
+  const notes   = document.getElementById('e_notes').value.trim();
+  if (!date || !desc || !amount) { toast('Fill in date, description, and amount'); return; }
+  const entry = { id: genId(), date, category: cat, description: desc, amount, paidVia, notes };
+  const arr = store.arr('expenses');
+  arr.push(entry);
+  store.set('expenses', arr);
+  state.expMonth = date.slice(0,7);
+  syncEntry('expenses', entry, 'e_sync');
+  render();
+  toast('Expense saved');
+}
+
+// ================================================================
+// TAB: INVENTORY
+// ================================================================
+const UNITS = ['kg','L','pcs','g','ml','box','dozen','pack'];
+
+function buildInventory() {
+  const all      = store.arr('inventory');
+  const filtered = byMonth(all, state.invMonth);
+  const totalAmt = filtered.reduce((s,e) => s + (Number(e.amount)||0), 0);
+  const salesMon = byMonth(store.arr('sales'), state.invMonth);
+  const salesTot = salesMon.reduce((s,e) => s + (Number(e.cash)||0) + (Number(e.upi)||0), 0);
+  const rmPct    = salesTot > 0 ? (totalAmt/salesTot*100).toFixed(1) : null;
+  const rmBad    = rmPct !== null && parseFloat(rmPct) > 38;
+  const sorted   = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+  return `
+<div class="page-title">Inventory Purchase Log</div>
+
+<div class="form-card">
+  <div class="section-label">Add Purchase</div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="i_date" value="${todayISO()}">
+    </div>
+    <div class="form-group">
+      <label>Item</label>
+      <input type="text" id="i_item" placeholder="Milk, bread, coffee beans...">
+    </div>
+    <div class="form-group">
+      <label>Quantity</label>
+      <input type="number" id="i_qty" placeholder="0" min="0" step="any">
+    </div>
+    <div class="form-group">
+      <label>Unit</label>
+      <select id="i_unit">
+        ${UNITS.map(u => `<option value="${u}">${u}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Amount Paid (₹)</label>
+      <input type="number" id="i_amt" placeholder="0" min="0">
+    </div>
+    <div class="form-group">
+      <label>Supplier</label>
+      <input type="text" id="i_sup" placeholder="Vendor name">
+    </div>
+    <div class="form-group">
+      <label>Bought By</label>
+      <input type="text" id="i_by" placeholder="You / staff name">
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="addInventory()">Add Purchase</button>
+    <span class="sync-msg" id="i_sync"></span>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Raw Material Cost</div>
+    <div class="stat-value">${fmtRs(totalAmt)}</div>
+    <div class="stat-sub">${filtered.length} purchases</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">% of Sales Revenue</div>
+    <div class="stat-value ${rmBad ? 'neg' : rmPct !== null ? 'pos' : ''}">${rmPct !== null ? rmPct + '%' : '—'}</div>
+    <div class="stat-sub">${rmBad ? 'High — ideal is under 35%' : rmPct !== null ? 'Looks healthy' : 'Add sales data'}</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <div class="table-title">Purchases — ${fmtMonth(state.invMonth)}</div>
+    <div class="table-controls">
+      <div class="month-sel">
+        Month: <select onchange="state.invMonth=this.value;render()">${monthOpts(state.invMonth)}</select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV('inventory')">Export CSV</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Item</th><th>Qty</th><th>Unit</th><th>Amount</th><th>Supplier</th><th>Bought By</th><th></th>
+      </tr></thead>
+      <tbody>
+      ${sorted.length === 0
+        ? `<tr><td colspan="8" class="empty">No purchases for ${fmtMonth(state.invMonth)}</td></tr>`
+        : sorted.map(e => `<tr>
+            <td>${e.date}</td>
+            <td class="bold">${e.item}</td>
+            <td>${e.qty}</td>
+            <td class="muted">${e.unit}</td>
+            <td>${fmtRs(e.amount)}</td>
+            <td class="muted">${e.supplier || '—'}</td>
+            <td class="muted">${e.boughtBy || '—'}</td>
+            <td><button class="btn-del" onclick="del('inventory','${e.id}')">✕</button></td>
+          </tr>`).join('')
+      }
+      </tbody>
+    </table>
+  </div>
+</div>`;
+}
+
+function addInventory() {
+  const date     = document.getElementById('i_date').value;
+  const item     = document.getElementById('i_item').value.trim();
+  const qty      = parseFloat(document.getElementById('i_qty').value) || 0;
+  const unit     = document.getElementById('i_unit').value;
+  const amount   = parseFloat(document.getElementById('i_amt').value) || 0;
+  const supplier = document.getElementById('i_sup').value.trim();
+  const boughtBy = document.getElementById('i_by').value.trim();
+  if (!date || !item || !amount) { toast('Fill in date, item, and amount'); return; }
+  const entry = { id: genId(), date, item, qty, unit, amount, supplier, boughtBy };
+  const arr = store.arr('inventory');
+  arr.push(entry);
+  store.set('inventory', arr);
+  state.invMonth = date.slice(0,7);
+  syncEntry('inventory', entry, 'i_sync');
+  render();
+  toast('Purchase saved');
+}
+
+// ================================================================
+// TAB: CASH DRAWER
+// ================================================================
+function buildDrawer() {
+  const all      = store.arr('drawer');
+  const filtered = byMonth(all, state.drawerMonth);
+  const sorted   = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+  // Summary stats
+  const totalCollected  = filtered.reduce((s,e) => s+(Number(e.actualCounted)||0), 0);
+  const totalDiscrepancy= filtered.reduce((s,e) => {
+    const exp = (Number(e.morningFloat)||0) + (Number(e.cashSales)||0);
+    return s + (exp - (Number(e.actualCounted)||0));
+  }, 0);
+  const totalKeptAside  = filtered.reduce((s,e) => s+(Number(e.keptAside)||0), 0);
+  const totalNextFloat  = filtered.reduce((s,e) => s+(Number(e.nextFloat)||0), 0);
+
+  // Try to auto-fill cash sales from today's sales log
+  const todaySales = store.arr('sales').find(e => e.date === todayISO());
+  const autoSales  = todaySales ? ((Number(todaySales.cash)||0)) : '';
+
+  return `
+<div class="page-title">Cash Drawer Log</div>
+
+<div class="info-box" style="margin-bottom:16px;font-size:13px;line-height:1.7">
+  <strong>How this works:</strong>
+  Morning Float + Cash Sales = Expected in drawer at close.
+  Actual Counted is what you physically count.
+  Difference = cash used/spent during the day (tea, petty expenses, staff advances, etc.).
+  Then you decide how much to keep aside and how much goes back as next day's float.
+</div>
+
+<div class="form-card">
+  <div class="section-label">Record Today's Drawer</div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="d_date" value="${todayISO()}" oninput="calcDrawerLive()">
+    </div>
+    <div class="form-group">
+      <label>Morning Float (₹) <span style="font-weight:400;color:var(--text2);font-size:11px">— put in drawer at open</span></label>
+      <input type="number" id="d_float" placeholder="e.g. 2000" min="0" oninput="calcDrawerLive()">
+    </div>
+    <div class="form-group">
+      <label>Cash Sales Today (₹) <span style="font-weight:400;color:var(--text2);font-size:11px">— from Petpooja / manual</span></label>
+      <input type="number" id="d_sales" placeholder="${autoSales !== '' ? 'Auto: ₹'+autoSales+' (edit if needed)' : 'e.g. 6200'}" value="${autoSales}" min="0" oninput="calcDrawerLive()">
+    </div>
+    <div class="form-group">
+      <label>Actual Counted at Close (₹) <span style="font-weight:400;color:var(--text2);font-size:11px">— physical count</span></label>
+      <input type="number" id="d_actual" placeholder="e.g. 8000" min="0" oninput="calcDrawerLive()">
+    </div>
+    <div class="form-group">
+      <label>Amount Kept Aside (₹) <span style="font-weight:400;color:var(--text2);font-size:11px">— you take home / deposit</span></label>
+      <input type="number" id="d_kept" placeholder="e.g. 5000" min="0" oninput="calcDrawerLive()">
+    </div>
+    <div class="form-group">
+      <label>Next Morning Float (₹) <span style="font-weight:400;color:var(--text2);font-size:11px">— put back in drawer</span></label>
+      <input type="number" id="d_next" placeholder="e.g. 2000" min="0" oninput="calcDrawerLive()">
+    </div>
+    <div class="form-group full">
+      <label>Notes (petty expenses, what cash was used for, etc.)</label>
+      <input type="text" id="d_notes" placeholder="e.g. Paid milk vendor ₹400, gave staff advance ₹500">
+    </div>
+  </div>
+  <div class="live-calc" id="d_calc" style="flex-direction:column;gap:6px"></div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="addDrawer()">Save Drawer Entry</button>
+    <span class="sync-msg" id="d_sync"></span>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Collected</div>
+    <div class="stat-value">${fmtRs(totalCollected)}</div>
+    <div class="stat-sub">${filtered.length} days</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Cash Spent from Drawer</div>
+    <div class="stat-value ${totalDiscrepancy > 0 ? 'neg' : ''}">${fmtRs(totalDiscrepancy)}</div>
+    <div class="stat-sub">Expected minus actual</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Kept Aside</div>
+    <div class="stat-value">${fmtRs(totalKeptAside)}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Returned as Float</div>
+    <div class="stat-value">${fmtRs(totalNextFloat)}</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <div class="table-title">Drawer Records — ${fmtMonth(state.drawerMonth)}</div>
+    <div class="table-controls">
+      <div class="month-sel">
+        Month: <select onchange="state.drawerMonth=this.value;render()">${monthOpts(state.drawerMonth)}</select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV('drawer')">Export CSV</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Date</th>
+        <th>Morning Float</th>
+        <th>Cash Sales</th>
+        <th>Expected</th>
+        <th>Actual Counted</th>
+        <th>Difference</th>
+        <th>Kept Aside</th>
+        <th>Next Float</th>
+        <th>Notes</th>
+        <th></th>
+      </tr></thead>
+      <tbody>
+      ${sorted.length === 0
+        ? `<tr><td colspan="10" class="empty">No entries for ${fmtMonth(state.drawerMonth)}</td></tr>`
+        : sorted.map(e => {
+            const exp  = (Number(e.morningFloat)||0) + (Number(e.cashSales)||0);
+            const diff = exp - (Number(e.actualCounted)||0);
+            const check= (Number(e.keptAside)||0) + (Number(e.nextFloat)||0);
+            const unaccounted = (Number(e.actualCounted)||0) - check;
+            return `<tr>
+              <td>${e.date}</td>
+              <td>${fmtRs(e.morningFloat)}</td>
+              <td>${fmtRs(e.cashSales)}</td>
+              <td>${fmtRs(exp)}</td>
+              <td class="bold">${fmtRs(e.actualCounted)}</td>
+              <td class="${diff > 0 ? 'neg' : diff < 0 ? 'pos' : 'muted'}" style="font-weight:${diff!==0?'600':'400'}">
+                ${diff > 0 ? '-' : diff < 0 ? '+' : ''}${fmtRs(Math.abs(diff))}
+              </td>
+              <td>${fmtRs(e.keptAside)}</td>
+              <td>${fmtRs(e.nextFloat)}</td>
+              <td class="muted" style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${e.notes||''}</td>
+              <td><button class="btn-del" onclick="del('drawer','${e.id}')">✕</button></td>
+            </tr>`;
+          }).join('')
+      }
+      </tbody>
+    </table>
+  </div>
+</div>`;
+}
+
+function calcDrawerLive() {
+  const float  = Number(document.getElementById('d_float')?.value  || 0);
+  const sales  = Number(document.getElementById('d_sales')?.value  || 0);
+  const actual = Number(document.getElementById('d_actual')?.value || 0);
+  const kept   = Number(document.getElementById('d_kept')?.value   || 0);
+  const next   = Number(document.getElementById('d_next')?.value   || 0);
+  const el     = document.getElementById('d_calc');
+  if (!el) return;
+
+  const expected = float + sales;
+  if (expected === 0 && actual === 0) { el.innerHTML = ''; return; }
+
+  const diff       = expected - actual;
+  const checkTotal = kept + next;
+  const remaining  = actual - checkTotal;
+
+  let html = '';
+  if (expected > 0) {
+    html += `<span>Expected in drawer: <strong>${fmtRs(expected)}</strong>`;
+    if (actual > 0) {
+      const diffLabel = diff > 0
+        ? `<span style="color:var(--red)"> — ₹${Math.abs(diff).toLocaleString('en-IN')} spent/missing from drawer</span>`
+        : diff < 0
+        ? `<span style="color:var(--green)"> — ₹${Math.abs(diff).toLocaleString('en-IN')} extra (possible entry error)</span>`
+        : `<span style="color:var(--green)"> — exact match</span>`;
+      html += diffLabel;
+    }
+    html += '</span>';
+  }
+  if (actual > 0 && (kept > 0 || next > 0)) {
+    const remStyle = Math.abs(remaining) > 10 ? 'color:var(--red)' : 'color:var(--green)';
+    html += `<span>Kept aside + Next float = ${fmtRs(checkTotal)} &nbsp;·&nbsp; <span style="${remStyle}">Unaccounted: ${fmtRs(remaining)}${Math.abs(remaining) > 10 ? ' (check your numbers)' : ' ✓'}</span></span>`;
+  }
+  el.innerHTML = html;
+}
+
+function addDrawer() {
+  const date         = document.getElementById('d_date').value;
+  const morningFloat = parseFloat(document.getElementById('d_float').value)  || 0;
+  const cashSales    = parseFloat(document.getElementById('d_sales').value)  || 0;
+  const actualCounted= parseFloat(document.getElementById('d_actual').value) || 0;
+  const keptAside    = parseFloat(document.getElementById('d_kept').value)   || 0;
+  const nextFloat    = parseFloat(document.getElementById('d_next').value)   || 0;
+  const notes        = document.getElementById('d_notes').value.trim();
+
+  if (!date) { toast('Please enter a date'); return; }
+  if (actualCounted === 0) { toast('Enter the actual counted amount'); return; }
+
+  const entry = { id: genId(), date, morningFloat, cashSales, actualCounted, keptAside, nextFloat, notes };
+  const arr   = store.arr('drawer');
+  arr.push(entry);
+  store.set('drawer', arr);
+  state.drawerMonth = date.slice(0,7);
+  syncEntry('drawer', entry, 'd_sync');
+  render();
+  toast('Drawer entry saved');
+}
+
+
+function buildPL() {
+  const sales = byMonth(store.arr('sales'),    state.plMonth);
+  const exps  = byMonth(store.arr('expenses'), state.plMonth);
+
+  const totalRev  = sales.reduce((s,e) => s + (Number(e.cash)||0) + (Number(e.upi)||0), 0);
+  const cashRev   = sales.reduce((s,e) => s + (Number(e.cash)||0), 0);
+  const upiRev    = sales.reduce((s,e) => s + (Number(e.upi)||0), 0);
+
+  const rawMat    = expSum(exps, 'Raw Material');
+  const salary    = expSum(exps, 'Salary');
+  const rent      = expSum(exps, 'Rent');
+  const elec      = expSum(exps, 'Electricity');
+  const gen       = expSum(exps, 'Generator');
+  const pack      = expSum(exps, 'Packaging');
+  const maint     = expSum(exps, 'Maintenance');
+  const petpooja  = expSum(exps, 'Petpooja');
+  const transport = expSum(exps, 'Transport');
+  const other     = expSum(exps, 'Other');
+  const personal  = expSum(exps, 'Personal Withdrawal');
+
+  const opEx      = rawMat + salary + rent + elec + gen + pack + maint + petpooja + transport + other;
+  const netProfit = totalRev - opEx;
+  const afterWith = netProfit - personal;
+  const rmPct     = totalRev > 0 ? (rawMat/totalRev*100).toFixed(1) : '—';
+  const salPct    = totalRev > 0 ? (salary/totalRev*100).toFixed(1) : '—';
+  const profitPct = totalRev > 0 ? (netProfit/totalRev*100).toFixed(1) : '—';
+
+  const row = (label, val, cls='', sub=false) => {
+    const formatted = fmtRs(Math.abs(val));
+    const style = val < 0 ? 'color:var(--red)' : '';
+    return `<div class="pl-row${cls ? ' '+cls : ''}${sub ? ' sub' : ''}">
+      <span>${label}</span>
+      <span style="font-weight:500;${style}">${formatted}</span>
+    </div>`;
+  };
+
+  const expItems = [
+    ['Raw Material', rawMat],
+    ['Salary & Wages', salary],
+    ['Rent', rent],
+    ['Electricity', elec],
+    ['Generator / Fuel', gen],
+    ['Packaging', pack],
+    ['Maintenance & Repairs', maint],
+    ['Petpooja Subscription', petpooja],
+    ['Transport', transport],
+    ['Other', other],
+  ].filter(([,v]) => v > 0);
+
+  const plContent = totalRev === 0 && exps.length === 0
+    ? `<div class="info-box" style="margin-top:16px">No data found for ${fmtMonth(state.plMonth)}. Add daily sales and expenses first, then this report auto-populates.</div>`
+    : `<div class="pl-wrap">
+        <div class="pl-row head-row"><span>Item</span><span>Amount</span></div>
+
+        <div class="pl-row section-head">
+          <span>Revenue</span>
+          <span style="color:var(--green);font-weight:600">${fmtRs(totalRev)}</span>
+        </div>
+        ${totalRev > 0 ? row('Cash Sales', cashRev, '', true) + row('UPI / Online', upiRev, '', true) : ''}
+
+        <div class="pl-row section-head" style="margin-top:0">
+          <span>Operating Expenses</span>
+          <span style="color:var(--red);font-weight:600">${fmtRs(opEx)}</span>
+        </div>
+        ${expItems.length === 0 ? '<div class="pl-row sub muted">No expenses recorded</div>' : expItems.map(([l,v]) => row(l,v,'',true)).join('')}
+
+        <div class="pl-row total-row divider">
+          <span>Net Profit</span>
+          <span style="color:${netProfit >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${fmtRs(netProfit)}</span>
+        </div>
+
+        ${personal > 0 ? `
+        ${row('Personal Withdrawal', personal, '', true)}
+        <div class="pl-row after">
+          <span>After Your Withdrawal</span>
+          <span style="color:${afterWith >= 0 ? 'var(--green)' : 'var(--red)'};">${fmtRs(afterWith)}</span>
+        </div>` : ''}
+
+        <div class="pl-row" style="border-top:1px solid var(--border);color:var(--text2);font-size:13px">
+          <span>Raw Material % of Revenue</span>
+          <span style="color:${parseFloat(rmPct) > 38 ? 'var(--red)' : 'var(--green)'}">${rmPct}%</span>
+        </div>
+        <div class="pl-row" style="color:var(--text2);font-size:13px">
+          <span>Salary % of Revenue</span>
+          <span>${salPct}%</span>
+        </div>
+        <div class="pl-row" style="color:var(--text2);font-size:13px">
+          <span>Net Profit Margin</span>
+          <span style="color:${parseFloat(profitPct) > 0 ? 'var(--green)' : 'var(--red)'}">${profitPct}%</span>
+        </div>
+      </div>`;
+
+  return `
+<div class="page-title">
+  Monthly P&amp;L
+  <div class="month-sel">
+    Month: <select onchange="state.plMonth=this.value;render()">${monthOpts(state.plMonth)}</select>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Revenue</div>
+    <div class="stat-value">${fmtRs(totalRev)}</div>
+    <div class="stat-sub">${sales.length} days</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Expenses</div>
+    <div class="stat-value neg">${fmtRs(opEx)}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Net Profit</div>
+    <div class="stat-value ${netProfit >= 0 ? 'pos' : 'neg'}">${fmtRs(netProfit)}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Profit Margin</div>
+    <div class="stat-value ${parseFloat(profitPct) > 0 ? 'pos' : 'neg'}">${profitPct}%</div>
+  </div>
+</div>
+
+${plContent}`;
+}
+
+// ================================================================
+// TAB: SETTINGS
+// ================================================================
+function buildSettings() {
+  const cafeName  = getCafeName();
+  const sheetsUrl = store.get('sheets_url') || '';
+
+  return `
+<div class="page-title">Settings</div>
+
+<div class="settings-block">
+  <h3>Café Details</h3>
+  <div class="settings-row">
+    <label>Café Name</label>
+    <input type="text" id="set_name" value="${cafeName}" placeholder="Your Café Name" maxlength="40">
+  </div>
+  <button class="btn btn-primary" onclick="saveCafeName()">Save Name</button>
+</div>
+
+<div class="settings-block">
+  <h3>Google Sheets Sync <span style="font-size:12px;color:var(--text2);font-weight:400">(optional — keeps a backup in your Google Sheets)</span></h3>
+  <div class="info-box">
+    <strong>How to set up (one-time, 5 minutes):</strong><br>
+    1. Open the <strong>Code.gs</strong> file you downloaded alongside this app<br>
+    2. Go to Google Sheets → <strong>Extensions → Apps Script</strong><br>
+    3. Paste the entire Code.gs content there, save (Ctrl+S)<br>
+    4. Click <strong>Deploy → New Deployment → Web App</strong><br>
+    5. Set "Execute as" = Me, "Who has access" = Anyone → <strong>Deploy</strong><br>
+    6. Copy the Web App URL and paste below
+  </div>
+  <div class="settings-row" style="margin-top:12px">
+    <label>Apps Script Web App URL</label>
+    <input type="url" id="set_url" value="${sheetsUrl}" placeholder="https://script.google.com/macros/s/.../exec">
+  </div>
+  <div class="row-actions">
+    <button class="btn btn-primary" onclick="saveUrl()">Save URL</button>
+    <button class="btn btn-ghost" onclick="testUrl()">Test Connection</button>
+    <span class="sync-msg" id="test_result"></span>
+  </div>
+</div>
+
+<div class="settings-block">
+  <h3>Data Management</h3>
+  <div class="info-box" style="margin-bottom:14px">
+    All data is stored <strong>locally in your browser</strong>. It does not go anywhere unless you set up Sheets sync above.
+    Use Export CSV to back up your data regularly.
+  </div>
+  <div class="row-actions">
+    <button class="btn btn-ghost" onclick="exportCSV('sales')">Export Sales CSV</button>
+    <button class="btn btn-ghost" onclick="exportCSV('expenses')">Export Expenses CSV</button>
+    <button class="btn btn-ghost" onclick="exportCSV('inventory')">Export Inventory CSV</button>
+    <button class="btn btn-ghost" onclick="exportCSV('drawer')">Export Cash Drawer CSV</button>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(181,58,45,0.3)"
+      onclick="if(confirm('Delete ALL data permanently? This cannot be undone.'))clearAll()">
+      Clear All Data
+    </button>
+  </div>
+</div>`;
+}
+
+function saveCafeName() {
+  const n = document.getElementById('set_name').value.trim() || 'My Café';
+  store.set('cafe_name', n);
+  document.getElementById('cafeNameDisplay').textContent = n;
+  document.title = n + ' — Tracker';
+  toast('Name saved');
+}
+
+async function saveUrl() {
+  const url = document.getElementById('set_url').value.trim();
+  store.set('sheets_url', url);
+  toast('URL saved');
+}
+
+async function testUrl() {
+  const url = store.get('sheets_url');
+  const el  = document.getElementById('test_result');
+  if (!url) { el.textContent = 'No URL saved yet'; return; }
+  el.textContent = 'Testing...';
+  el.className = 'sync-msg';
+  try {
+    await fetch(url + '?ping=1', { mode: 'no-cors' });
+    el.textContent = '✓ Reachable';
+    el.className = 'sync-msg ok';
+  } catch(e) {
+    el.textContent = '✗ Could not reach URL';
+    el.className = 'sync-msg err';
+  }
+}
+
+// ================================================================
+// SHARED
+// ================================================================
+function del(type, id) {
+  if (!confirm('Delete this entry?')) return;
+  store.set(type, store.arr(type).filter(e => e.id !== id));
+  render();
+  toast('Entry deleted');
+}
+
+function exportCSV(type) {
+  const data = store.arr(type);
+  if (!data.length) { toast('No data to export'); return; }
+  let headers, rows;
+  if (type === 'sales') {
+    headers = ['Date','Cash (Rs)','UPI/Online (Rs)','Total (Rs)','Customers','Avg Order Value (Rs)','Notes'];
+    rows = data.map(e => {
+      const tot = (Number(e.cash)||0)+(Number(e.upi)||0);
+      const aov = e.customers > 0 ? Math.round(tot/e.customers) : '';
+      return [e.date, e.cash||0, e.upi||0, tot, e.customers||0, aov, e.notes||''];
+    });
+  } else if (type === 'expenses') {
+    headers = ['Date','Category','Description','Amount (Rs)','Paid Via','Notes'];
+    rows = data.map(e => [e.date, e.category, e.description, e.amount, e.paidVia, e.notes||'']);
+  } else if (type === 'drawer') {
+    headers = ['Date','Morning Float (Rs)','Cash Sales (Rs)','Expected (Rs)','Actual Counted (Rs)','Difference (Rs)','Kept Aside (Rs)','Next Float (Rs)','Notes'];
+    rows = data.map(e => {
+      const exp  = (Number(e.morningFloat)||0) + (Number(e.cashSales)||0);
+      const diff = exp - (Number(e.actualCounted)||0);
+      return [e.date, e.morningFloat||0, e.cashSales||0, exp, e.actualCounted||0, diff, e.keptAside||0, e.nextFloat||0, e.notes||''];
+    });
+  } else {
+    headers = ['Date','Item','Quantity','Unit','Amount (Rs)','Supplier','Bought By'];
+    rows = data.map(e => [e.date, e.item, e.qty, e.unit, e.amount, e.supplier||'', e.boughtBy||'']);
+  }
+  const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download= `${type}_${new Date().toISOString().slice(0,7)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('CSV downloaded');
+}
+
+async function syncEntry(type, entry, syncElId) {
+  const url = store.get('sheets_url');
+  if (!url) return;
+  const el = document.getElementById(syncElId);
+  if (el) { el.textContent = 'Syncing...'; el.className = 'sync-msg'; }
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode:   'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({ type, entry })
+    });
+    if (el) { el.textContent = '✓ Saved to Sheets'; el.className = 'sync-msg ok'; }
+    setTimeout(() => { if (el) el.textContent = ''; }, 4000);
+  } catch(err) {
+    if (el) { el.textContent = '✗ Sync failed (local save still worked)'; el.className = 'sync-msg err'; }
+  }
+}
+
+function clearAll() {
+  ['sales','expenses','inventory','drawer','cafe_name','sheets_url'].forEach(k => store.remove(k));
+  render();
+  toast('All data cleared');
+}
+
+// ================================================================
+// INIT
+// ================================================================
+(function init() {
+  const name = getCafeName();
+  document.title = name + ' — Tracker';
+  const nd = document.getElementById('cafeNameDisplay');
+  if (nd) nd.textContent = name;
+  const nw = document.getElementById('nameWrap');
+  if (nw) nw.onclick = startEditName;
+
+  // Warn if running as local file (data won't persist on iPhone)
+  if (location.protocol === 'file:' && !_lsAvail) {
+    const warn = document.createElement('div');
+    warn.style = 'background:#fff8e1;border-bottom:1px solid #ffe082;padding:9px 18px;font-size:12.5px;color:#7a5c00;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap';
+    warn.innerHTML = `<span>⚠ Running as local file — data won't save between sessions on this device. Host on GitHub Pages for permanent storage.</span><button onclick="this.parentNode.remove()" style="background:none;border:none;font-size:15px;cursor:pointer;color:#7a5c00;padding:0 4px">✕</button>`;
+    document.body.insertBefore(warn, document.querySelector('.main'));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
